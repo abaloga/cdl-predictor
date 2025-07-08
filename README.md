@@ -26,5 +26,17 @@ A typical CDL match consists of 5 maps: Hardpoint (HP), Search and Destroy (SND)
 
 ## Sample Output
 
+| Winner  | Mode                | Map      | Team 1  | Team 2 |
+|---------|---------------------|----------|---------|--------|
+| Breach  | Hardpoint           | Vault    | Thieves | Breach |
+| Breach  | Search and Destroy  | Hacienda | Thieves | Breach |
+| Thieves | Control             | Vault    | Thieves | Breach |
+| Thieves | Hardpoint           | Rewind   | Thieves | Breach |
+| Breach  | Search and Destroy  | Red Card | Thieves | Breach |
 
 ## Accuracy
+Hardpoint Model Accuracy: 66.00%
+
+Search and Destroy Model Accuracy:  62.50%
+
+Control Model Accuracy: 83.87%

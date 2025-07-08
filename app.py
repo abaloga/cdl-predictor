@@ -108,12 +108,12 @@ team_list = {
     'Surge'
 }
 
-#team_one  = input("Enter Team 1:")
-team_one = "Heretics"
+team_one  = input("Enter Team 1:")
+#team_one = "Heretics"
 team_one, team_one_score, _ = process.extractOne(team_one, team_list, scorer=token_ratio) # normalizing user inputted team
 
-#team_two = input("Enter Team 2:")
-team_two = "guerrillas"
+team_two = input("Enter Team 2:")
+#team_two = "guerrillas"
 team_two, team_two_score, _ = process.extractOne(team_two, team_list,scorer=token_ratio) # normalizing user inputted team
 
 if team_one_score >= 50 and team_two_score >= 50:   # check if team is found
@@ -129,8 +129,8 @@ else:
 ### Part 3.5: Getting Map Inputs
 
 while True:   # Map 1
-    map_one = "protocol"
-#    map_one = input("Enter Map 1:")
+#    map_one = "protocol"
+    map_one = input("Enter Map 1:")
     map_one, map_one_score, _ = process.extractOne(map_one, hp_map_list, scorer=token_ratio) # normalizing user inputted map
     if map_one_score >= 60:   # check if map is found
         break
@@ -139,8 +139,8 @@ while True:   # Map 1
         print("Please enter a valid map from the list:" , set(m for m in hp_map_list if m not in excluded_hp))
 
 while True:   # Map 2
-    map_two = "hacienda"
-#    map_two = input("Enter Map 2:")
+#    map_two = "hacienda"
+    map_two = input("Enter Map 2:")
     map_two, map_two_score, _ = process.extractOne(map_two, snd_map_list, scorer=token_ratio) # normalizing user inputted map
     if map_two_score >= 60:   # check if map is found
         break
@@ -149,8 +149,8 @@ while True:   # Map 2
         print("Please enter a valid map from the list:" , set(m for m in snd_map_list if m not in excluded_snd))
 
 while True:   # Map 3
-    map_three = "vault"
-#    map_three = input("Enter Map 3:")
+#    map_three = "vault"
+    map_three = input("Enter Map 3:")
     map_three, map_three_score, _ = process.extractOne(map_three, ctrl_map_list, scorer=token_ratio) # normalizing user inputted map
     if map_three_score >= 60:   # check if map is found
         break
@@ -159,8 +159,8 @@ while True:   # Map 3
         print("Please enter a valid map from the list:" , set(m for m in ctrl_map_list if m not in excluded_ctrl))
 
 while True:   # Map 4
-    map_four = "hacienda"
-#    map_four = input("Enter Map 4:")
+#    map_four = "hacienda"
+    map_four = input("Enter Map 4:")
     map_four, map_four_score, _ = process.extractOne(map_four, hp_map_list, scorer=token_ratio) # normalizing user inputted map
     if map_four_score >= 60 and map_four != map_one:   # check if map is found
         break
@@ -169,8 +169,8 @@ while True:   # Map 4
         print("Please enter a valid map from the list:" , set(m for m in hp_map_list if m not in excluded_hp))
 
 while True:   # Map 5
-    map_five = "red card"
-#    map_five = input("Enter Map 5:")
+#    map_five = "red card"
+    map_five = input("Enter Map 5:")
     map_five, map_five_score, _ = process.extractOne(map_five, snd_map_list, scorer=token_ratio) # normalizing user inputted map
     if map_five_score >= 60 and map_five != map_two:   # check if map is found
         break
@@ -228,7 +228,6 @@ ctrl_model.fit(x_train, y_train)
 y_pred = ctrl_model.predict(x_test)
 
 accuracy = accuracy_score(y_test, y_pred)
-print(f"Control Model Accuracy: {accuracy:.2%}")
 
 # Load and manipulate HP training data
 hp_train_df = pd.read_csv("model 101/hp_training.csv")
@@ -247,8 +246,6 @@ hp_model.fit(x_hp_train, y_hp_train)
 y_hp_pred = hp_model.predict(x_hp_test)
 hp_accuracy = accuracy_score(y_hp_test, y_hp_pred)
 
-print(f"Hardpoint Model Accuracy: {hp_accuracy:.2%}")
-
 # Load and manipulate SND training set
 snd_train_df = pd.read_csv("model 101/snd_training.csv")
 
@@ -265,78 +262,115 @@ snd_model.fit(x_snd_train, y_snd_train)
 y_snd_pred = snd_model.predict(x_snd_test)
 snd_accuracy = accuracy_score(y_snd_test, y_snd_pred)
 
+# Print accuracies 
+print(f"Hardpoint Model Accuracy: {hp_accuracy:.2%}")
 print(f"Search and Destroy Model Accuracy: {snd_accuracy: .2%}")
+print(f"Control Model Accuracy: {accuracy:.2%}")
 
 ###
 
 ### Part 7: Predicting Matches
 
 # Map 1 winner
-t1_stats = hp_train_df[(hp_train_df['team_one'] == team_one) & (hp_train_df['Map'] == map_one)].copy()
-t2_stats = hp_train_df[(hp_train_df['team_two'] == team_two) & (hp_train_df['Map'] == map_one)].copy()
+# Find a match with these teams and map to use its feature structure
+match_sample = hp_train_df[((hp_train_df['team_one'] == team_one) | (hp_train_df['team_one'] == team_two)) & 
+                          ((hp_train_df['team_two'] == team_one) | (hp_train_df['team_two'] == team_two)) & 
+                          (hp_train_df['Map'] == map_one)].copy()
 
-t1_stats = t1_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-t2_stats = t2_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+if len(match_sample) == 0:
+    # If no exact match, use any match with this map as template
+    match_sample = hp_train_df[hp_train_df['Map'] == map_one].copy()
 
-m1_features = pd.concat([t1_stats.reset_index(drop=True), t2_stats.reset_index(drop=True)], axis=1)
-
-m1_features.to_csv("m1_features.csv", index=True)
-
-m1_pred = hp_model.predict(m1_features)[0]
+if len(match_sample) > 0:
+    # Use the first match as template and update team data
+    m1_features = match_sample.iloc[[0]].copy()
+    m1_features = m1_features.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+    
+    m1_features.to_csv("m1_features.csv", index=True)
+    
+    m1_pred_raw = hp_model.predict(m1_features)[0]
+    m1_pred = team_one if m1_pred_raw == 0 else team_two
+else:
+    print("No training data found for Map 1 prediction")
+    m1_pred = team_one  # Default prediction
 
 print(f"Map 1 Winner Prediction: {m1_pred}")
 
 # Map 2 winner
-t1_stats = snd_train_df[(snd_train_df['team_one'] == team_one) & (snd_train_df['Map'] == map_two)].copy()
-t2_stats = snd_train_df[(snd_train_df['team_two'] == team_two) & (snd_train_df['Map'] == map_two)].copy()
+match_sample = snd_train_df[((snd_train_df['team_one'] == team_one) | (snd_train_df['team_one'] == team_two)) & 
+                           ((snd_train_df['team_two'] == team_one) | (snd_train_df['team_two'] == team_two)) & 
+                           (snd_train_df['Map'] == map_two)].copy()
 
-t1_stats = t1_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-t2_stats = t2_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+if len(match_sample) == 0:
+    match_sample = snd_train_df[snd_train_df['Map'] == map_two].copy()
 
-m2_features = pd.concat([t1_stats.reset_index(drop=True), t2_stats.reset_index(drop=True)], axis=1)
-
-m2_pred = snd_model.predict(m2_features)[0]
+if len(match_sample) > 0:
+    m2_features = match_sample.iloc[[0]].copy()
+    m2_features = m2_features.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+    m2_pred_raw = snd_model.predict(m2_features)[0]
+    m2_pred = team_one if m2_pred_raw == 0 else team_two
+else:
+    print("No training data found for Map 2 prediction")
+    m2_pred = team_one
 
 print(f"Map 2 Winner Prediction: {m2_pred}")
 
 # Map 3 winner
+match_sample = ctrl_train_df[((ctrl_train_df['team_one'] == team_one) | (ctrl_train_df['team_one'] == team_two)) & 
+                            ((ctrl_train_df['team_two'] == team_one) | (ctrl_train_df['team_two'] == team_two)) & 
+                            (ctrl_train_df['Map'] == map_three)].copy()
 
-t1_stats = ctrl_train_df[(ctrl_train_df['team_one'] == team_one) & (ctrl_train_df['Map'] == map_three)].copy()
-t2_stats = ctrl_train_df[(ctrl_train_df['team_two'] == team_two) & (ctrl_train_df['Map'] == map_three)].copy()
+if len(match_sample) == 0:
+    match_sample = ctrl_train_df[ctrl_train_df['Map'] == map_three].copy()
 
-t1_stats = t1_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-t2_stats = t2_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-
-m3_features = pd.concat([t1_stats.reset_index(drop=True), t2_stats.reset_index(drop=True)], axis=1)
-
-m3_pred = ctrl_model.predict(m3_features)[0]
+if len(match_sample) > 0:
+    m3_features = match_sample.iloc[[0]].copy()
+    m3_features = m3_features.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+    m3_pred_raw = ctrl_model.predict(m3_features)[0]
+    m3_pred = team_one if m3_pred_raw == 0 else team_two
+else:
+    print("No training data found for Map 3 prediction")
+    m3_pred = team_one
 
 print(f"Map 3 Winner Prediction: {m3_pred}")
 
 # Map 4 winner
-t1_stats = hp_train_df[(hp_train_df['team_one'] == team_one) & (hp_train_df['Map'] == map_four)].copy()
-t2_stats = hp_train_df[(hp_train_df['team_two'] == team_two) & (hp_train_df['Map'] == map_four)].copy()
+match_sample = hp_train_df[((hp_train_df['team_one'] == team_one) | (hp_train_df['team_one'] == team_two)) & 
+                          ((hp_train_df['team_two'] == team_one) | (hp_train_df['team_two'] == team_two)) & 
+                          (hp_train_df['Map'] == map_four)].copy()
 
-t1_stats = t1_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-t2_stats = t2_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+if len(match_sample) == 0:
+    match_sample = hp_train_df[hp_train_df['Map'] == map_four].copy()
 
-m4_features = pd.concat([t1_stats.reset_index(drop=True), t2_stats.reset_index(drop=True)], axis=1)
-
-m4_pred = hp_model.predict(m4_features)[0]
+if len(match_sample) > 0:
+    m4_features = match_sample.iloc[[0]].copy()
+    m4_features = m4_features.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+    m4_pred_raw = hp_model.predict(m4_features)[0]
+    m4_pred = team_one if m4_pred_raw == 0 else team_two
+else:
+    print("No training data found for Map 4 prediction")
+    m4_pred = team_one
 
 print(f"Map 4 Winner Prediction: {m4_pred}")
 
 # Map 5 winner
-t1_stats = snd_train_df[(snd_train_df['team_one'] == team_one) & (snd_train_df['Map'] == map_five)].copy()
-t2_stats = snd_train_df[(snd_train_df['team_two'] == team_two) & (snd_train_df['Map'] == map_five)].copy()
+match_sample = snd_train_df[((snd_train_df['team_one'] == team_one) | (snd_train_df['team_one'] == team_two)) & 
+                           ((snd_train_df['team_two'] == team_one) | (snd_train_df['team_two'] == team_two)) & 
+                           (snd_train_df['Map'] == map_five)].copy()
 
-t1_stats = t1_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
-t2_stats = t2_stats.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+if len(match_sample) == 0:
+    match_sample = snd_train_df[snd_train_df['Map'] == map_five].copy()
 
-m5_features = pd.concat([t1_stats.reset_index(drop=True), t2_stats.reset_index(drop=True)], axis=1)
+if len(match_sample) > 0:
+    m5_features = match_sample.iloc[[0]].copy()
+    m5_features = m5_features.drop(columns=["Match #", "Game #", "Mode", "Map", "team_one", "team_two", "Winner", "team_score", "Score Against"])
+    m5_pred_raw = snd_model.predict(m5_features)[0]
+    m5_pred = team_one if m5_pred_raw == 0 else team_two
+else:
+    print("No training data found for Map 5 prediction")
+    m5_pred = team_one
 
-m5_pred = snd_model.predict(m5_features)[0]
-
+print(f"Map 5 Winner Prediction: {m5_pred}")
 
 match_data = [
     {'Winner': m1_pred,'Mode': 'Hardpoint', 'Map': map_one, 'Team 1': team_one, 'Team 2': team_two},
